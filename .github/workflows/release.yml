@@ -1,0 +1,52 @@
+name: Release StellaOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 0.1.0)'
+        required: true
+      codename:
+        description: 'Release codename'
+        required: true
+        default: 'Hoshizora'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y nasm gcc gcc-multilib make xorriso grub-pc-bin grub-common mtools
+    
+    - name: Build kernel
+      run: make all
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ github.event.inputs.version }}
+        name: "StellaOS ★ v${{ github.event.inputs.version }} - ${{ github.event.inputs.codename }}"
+        body: |
+          ## StellaOS ★ v${{ github.event.inputs.version }} "${{ github.event.inputs.codename }}"
+          
+          ### ✨ What's New
+          - Custom anime-themed desktop OS
+          - 30+ language support
+          - Kawaii installer with step-by-step wizard
+          
+          ### 📥 Download & Install
+          1. Download `StellaOS.iso` below
+          2. Use VirtualBox, QEMU, or VMware
+          3. Boot from ISO and follow installer
+        files: build/StellaOS.iso
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

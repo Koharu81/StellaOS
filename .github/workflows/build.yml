@@ -1,0 +1,72 @@
+name: Build StellaOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y nasm gcc gcc-multilib make xorriso grub-pc-bin grub-common mtools
+    
+    - name: Build kernel
+      run: make all
+    
+    - name: Verify ISO
+      run: |
+        ls -la build/StellaOS.iso
+        file build/StellaOS.iso
+    
+    - name: Upload ISO artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: StellaOS-ISO
+        path: build/StellaOS.iso
+    
+    - name: Create Release
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v0.1.0-build.${{ github.run_number }}
+        name: "StellaOS ★ Build #${{ github.run_number }}"
+        body: |
+          ## StellaOS ★ Automated Build
+          
+          **Build:** #${{ github.run_number }}
+          **Commit:** ${{ github.sha }}
+          **Date:** ${{ github.event.head_commit.timestamp }}
+          
+          ### ✨ Features
+          - Anime-themed desktop environment
+          - Rounded corners on all UI elements
+          - Floating taskbar with centered icons
+          - 30+ language support
+          - Built-in terminal, file manager, and settings
+          - Custom installer with kawaii UI
+          
+          ### 📥 Installation
+          1. Download `StellaOS.iso`
+          2. Create a new VM (VirtualBox/QEMU recommended)
+          3. Mount the ISO and boot
+          4. Follow the installer wizard
+          
+          ### ⚡ Quick Test with QEMU
+          ```bash
+          qemu-system-i386 -cdrom StellaOS.iso -m 256M
+          ```
+        files: build/StellaOS.iso
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
